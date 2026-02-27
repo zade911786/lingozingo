@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>LangZingo</title>
+<link rel="icon" href="lingozingo.png"/>
+<link rel="apple-touch-icon" href="lingozingo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{
+  height:100dvh;overflow:hidden;
+  font-family:'Nunito',sans-serif;
+  background:#070714;color:#f0f0ff;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+button,input,select{font-family:inherit;cursor:pointer}
+input{cursor:text}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:#7c3aed44;border-radius:2px}
+
+/* ── Themes ── */
+:root{
+  --bg:#070714;--card:#10102a;--card2:#18183a;
+  --ac:#7c3aed;--ac2:#a855f7;--glow:#7c3aed66;
+  --tx:#f0f0ff;--sub:#7878a8;
+  --grn:#22c55e;--gld:#fbbf24;--red:#f87171;
+  --r:16px;--rs:11px;
+  --sbot:env(safe-area-inset-bottom,0px);
+  --stop:env(safe-area-inset-top,0px);
+}
+[data-t=neon]{--bg:#00080f;--card:#001525;--card2:#002035;--ac:#00d4ff;--ac2:#00ffcc;--glow:#00d4ff55;--tx:#e0ffff;--sub:#4a7777}
+[data-t=rose]{--bg:#12050a;--card:#200a12;--card2:#2e0f1a;--ac:#f43f5e;--ac2:#fb7185;--glow:#f43f5e55;--tx:#ffe4e9;--sub:#775060}
+[data-t=amber]{--bg:#0f0900;--card:#1e1200;--card2:#2a1a00;--ac:#f59e0b;--ac2:#fbbf24;--glow:#f59e0b55;--tx:#fff8e1;--sub:#775522}
+[data-t=forest]{--bg:#030f05;--card:#071a0a;--card2:#0d2610;--ac:#16a34a;--ac2:#22c55e;--glow:#16a34a55;--tx:#e0ffe8;--sub:#346644}
+[data-t=ocean]{--bg:#030a14;--card:#071525;--card2:#0d2035;--ac:#0ea5e9;--ac2:#38bdf8;--glow:#0ea5e955;--tx:#e0f4ff;--sub:#225577}
+
+/* ── Keyframes ── */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes gpulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.8;transform:scale(1.06)}}
+@keyframes sup{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes loadbar{0%{width:0}60%{width:73%}100%{width:100%}}
+@keyframes burst{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-90px) scale(0)}}
+@keyframes popin{0%{opacity:0;transform:scale(.86)}100%{opacity:1;transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Particles ── */
+#ptcl{position:fixed;inset:0;pointer-events:none;z-index:9990;overflow:hidden}
+.pt{position:absolute;border-radius:50%;animation:burst 1.2s ease-out forwards}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;top:calc(14px + var(--stop));left:50%;
+  transform:translateX(-50%) translateY(-70px);
+  background:var(--ac);color:#fff;padding:10px 20px;
+  border-radius:50px;font-weight:800;font-size:13px;
+  z-index:9999;box-shadow:0 4px 16px var(--glow);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center;
+}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.err{background:#f43f5e}
+#toast.ok{background:var(--grn)}
+
+/* ── Sync badge ── */
+#synci{
+  position:fixed;bottom:calc(64px + var(--sbot));right:10px;
+  font-size:10px;font-weight:700;padding:4px 8px;border-radius:14px;
+  z-index:500;background:var(--card);color:var(--sub);
+  border:1px solid var(--ac)33;opacity:0;transition:opacity .3s;
+}
+#synci.show{opacity:1}
+
+/* ── SPLASH ── */
+#splash{
+  position:fixed;inset:0;background:var(--bg);z-index:1000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;transition:opacity .5s,transform .5s;
+}
+#splash.out{opacity:0;transform:scale(1.03);pointer-events:none}
+.sorb{position:absolute;border-radius:50%;background:radial-gradient(circle,var(--ac)13,transparent 70%);animation:gpulse 3s ease-in-out infinite}
+#slogo{
+  width:min(96px,22vw);height:min(96px,22vw);border-radius:22px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px var(--glow),0 0 80px var(--glow);
+  animation:float 3s ease-in-out infinite;overflow:hidden;margin-bottom:16px;
+}
+#slogo img{width:100%;height:100%;object-fit:cover;border-radius:22px}
+#slogo .sfb{font-size:50px;line-height:1;display:none}
+#stitle{
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(32px,10vw,50px);
+  background:linear-gradient(135deg,var(--ac),var(--ac2),#ec4899,var(--ac));
+  background-size:300% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shimmer 3s linear infinite;margin-bottom:6px;
+}
+#ssub{color:var(--sub);font-size:clamp(12px,3.5vw,15px);font-weight:600;margin-bottom:30px;animation:fadein 1s .4s both}
+#sbar{width:min(180px,52vw);height:5px;background:var(--card2);border-radius:3px;overflow:hidden}
+#sfill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2),#ec4899);border-radius:3px;animation:loadbar 2.4s ease forwards}
+.scred{position:absolute;bottom:calc(16px + var(--sbot));font-size:11px;color:var(--sub);display:flex;align-items:center;gap:6px;animation:fadein 1s 1.2s both}
+.tgbtn{display:inline-flex;align-items:center;gap:4px;background:#0088cc;color:#fff;text-decoration:none;padding:4px 10px;border-radius:16px;font-weight:800;font-size:11px}
+.tgico{width:12px;height:12px;fill:#fff;flex-shrink:0}
+
+/* ── APP wrapper ── */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+
+/* ── Screens ── */
+.sc{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;transform:translateY(8px)}
+.sc.on{opacity:1;pointer-events:all;transform:translateY(0)}
+
+/* ── AUTH ── */
+#asc{align-items:center;justify-content:flex-start;padding:calc(var(--stop)+10px) 15px calc(var(--sbot)+14px);overflow-y:auto}
+.aorb{position:absolute;border-radius:50%;pointer-events:none}
+.alogo{display:flex;flex-direction:column;align-items:center;margin:14px 0 16px;animation:sup .5s ease-out}
+.alogobox{
+  width:56px;height:56px;border-radius:15px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 28px var(--glow);margin-bottom:8px;overflow:hidden;
+}
+.alogobox img{width:100%;height:100%;object-fit:cover;border-radius:15px}
+.alogobox .afb{font-size:32px;line-height:1;display:none}
+.atitle{font-family:'Fredoka One',cursive;font-size:clamp(24px,7vw,32px);background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.acard{width:100%;max-width:400px;background:var(--card);border-radius:var(--r);padding:18px;border:1px solid var(--ac)1e;box-shadow:0 8px 30px #00000055;animation:sup .4s .1s ease-out both}
+.atabs{display:flex;gap:6px;margin-bottom:16px}
+.atab{flex:1;padding:11px 0;border-radius:var(--rs);border:none;font-weight:800;font-size:14px;color:var(--sub);background:var(--bg);transition:all .2s}
+.atab.on{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;box-shadow:0 4px 12px var(--glow)}
+.finp{
+  width:100%;background:var(--card2);border:2px solid var(--ac)25;
+  border-radius:var(--rs);padding:13px 14px;color:var(--tx);
+  font-size:15px;outline:none;transition:border-color .2s;display:block;
+}
+.finp:focus{border-color:var(--ac)}
+.finp::placeholder{color:var(--sub)}
+.fgrp{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.emsg{color:var(--red);font-size:12px;text-align:center;font-weight:700;margin-top:5px;display:none;animation:shake .4s ease}
+.emsg.on{display:block}
+.btnpri{
+  width:100%;padding:13px;border:none;border-radius:var(--rs);
+  background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;
+  font-weight:800;font-size:15px;margin-top:8px;
+  box-shadow:0 4px 14px var(--glow);transition:transform .15s;
+}
+.btnpri:active{transform:scale(.96)}
+.btnpri:disabled{opacity:.6;pointer-events:none}
+.aftr{text-align:center;margin-top:14px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+
+/* ── LANG SELECT ── */
+#lsc{padding:calc(var(--stop)+12px) 13px calc(var(--sbot)+12px);overflow-y:auto}
+.lshead{text-align:center;margin-bottom:18px;animation:sup .4s ease-out}
+.lstitle{font-family:'Fredoka One',cursive;font-size:clamp(20px,6vw,28px);background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;max-width:640px;margin:0 auto}
+.lgc{background:var(--card);border-radius:var(--r);padding:14px 8px;text-align:center;border:2px solid transparent;cursor:pointer;animation:popin .3s ease-out both;transition:transform .18s,border-color .18s}
+.lgc:active{transform:scale(.94)}
+.lgflag{font-size:32px;display:block;margin-bottom:5px;line-height:1}
+.lgnm{font-weight:800;font-size:13px;margin-bottom:2px}
+.lgen{font-size:10px;color:var(--sub)}
+
+/* ── HOME ── */
+#hsc{background:var(--bg)}
+.hdr{
+  padding:calc(var(--stop)+8px) 12px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--ac)11;flex-shrink:0;
+  background:var(--card)cc;backdrop-filter:blur(12px);z-index:10;
+}
+.hlogo{font-family:'Fredoka One',cursive;font-size:19px;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px}
+.hlogoimg{width:24px;height:24px;border-radius:6px;object-fit:cover}
+.hstats{display:flex;gap:6px;align-items:center}
+.hpill{display:flex;align-items:center;gap:2px;font-weight:800;font-size:11px;background:var(--card2);padding:4px 8px;border-radius:14px}
+.htbtn{background:var(--card2);border:none;padding:6px 7px;border-radius:7px;color:var(--sub);font-size:14px;line-height:1}
+.htbtn:active{background:var(--ac)22}
+
+.xprow{padding:5px 12px 3px;flex-shrink:0}
+.xplbls{display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:3px;font-weight:700}
+.xptrk{height:5px;background:var(--card2);border-radius:3px;overflow:hidden}
+.xpbar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ac),var(--ac2),#ec4899);transition:width .6s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 6px var(--glow)}
+
+/* ── Tab content ── */
+.tcont{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px}
+.tpnl{display:none;animation:sup .25s ease-out}
+.tpnl.on{display:block}
+
+/* ── Bottom nav ── */
+.bnav{
+  display:flex;border-top:1px solid var(--ac)11;flex-shrink:0;
+  background:var(--card)ee;backdrop-filter:blur(12px);
+  padding-bottom:var(--sbot);
+}
+.nbtn{
+  flex:1;padding:9px 4px 7px;border:none;background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  color:var(--sub);font-size:10px;font-weight:700;transition:color .15s;
+}
+.nbico{font-size:18px;line-height:1;transition:transform .18s;display:block}
+.nbtn.on{color:var(--ac)}
+.nbtn.on .nbico{transform:scale(1.15)}
+.nbtn:active .nbico{transform:scale(.9)}
+
+/* ── Cards ── */
+.card{background:var(--card);border-radius:var(--r);padding:13px;border:1px solid var(--ac)11;margin-bottom:10px}
+.cacc{background:linear-gradient(135deg,var(--card),var(--ac)12);border:2px solid var(--ac)35}
+.cgld{background:linear-gradient(135deg,var(--card),#fbbf240b);border:2px solid #fbbf2430}
+.cgrn{background:linear-gradient(135deg,var(--card),#22c55e09);border:2px solid #22c55e26}
+
+/* ── Voice panel ── */
+.vpnl{background:var(--card);border-radius:var(--r);padding:12px;margin-bottom:10px;border:1px solid var(--ac)16}
+.vptit{font-weight:800;font-size:12px;margin-bottom:9px;color:var(--ac);display:flex;align-items:center;gap:5px}
+.charrow{display:flex;gap:7px;margin-bottom:9px}
+.chbtn{
+  flex:1;padding:10px 5px;border-radius:var(--rs);border:2px solid var(--ac)20;
+  background:var(--card2);color:var(--sub);display:flex;flex-direction:column;
+  align-items:center;gap:2px;font-weight:700;transition:all .18s;
+}
+.chbtn .chav{font-size:20px;line-height:1}
+.chbtn .chnm{font-size:12px;font-weight:800}
+.chbtn .chdesc{font-size:9px;opacity:.7;text-align:center;line-height:1.2}
+.chbtn.on{border-color:var(--ac);background:var(--ac)14;color:var(--ac)}
+.chbtn:active{transform:scale(.93)}
+.sprow{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.splbl{font-size:11px;color:var(--sub);font-weight:700}
+.spbtn{padding:6px 10px;border-radius:7px;border:2px solid var(--ac)16;background:var(--card2);color:var(--sub);font-size:11px;font-weight:800;transition:all .15s}
+.spbtn.on{background:var(--ac)14;border-color:var(--ac);color:var(--ac)}
+.spbtn:active{transform:scale(.93)}
+
+/* ── WOD ── */
+.wlbl{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--gld);margin-bottom:7px}
+.wword{font-size:clamp(28px,9vw,42px);font-weight:900;line-height:1.1;margin-bottom:3px}
+.wroman{font-size:13px;color:var(--sub);margin-bottom:2px}
+.wmean{font-weight:700;font-size:15px;margin-bottom:8px}
+.sbox{background:var(--card2);border-radius:var(--rs);padding:9px 11px;margin-bottom:9px}
+.snat{font-weight:600;font-size:13px}
+.srom{font-size:11px;color:var(--sub);margin-top:2px}
+.smean{font-size:11px;color:var(--grn);margin-top:2px}
+
+/* ── Buttons ── */
+.btnl{
+  display:inline-flex;align-items:center;gap:5px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;
+  border:none;border-radius:var(--rs);padding:9px 15px;
+  font-weight:800;font-size:12px;box-shadow:0 3px 10px var(--glow);transition:transform .15s;
+}
+.btnl:active{transform:scale(.94)}
+.btnlg{background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 3px 10px #22c55e30}
+
+/* ── Lesson cards ── */
+.lcard{
+  background:var(--card);border-radius:var(--r);padding:12px 13px;
+  display:flex;align-items:center;justify-content:space-between;
+  border:1px solid var(--ac)14;margin-bottom:8px;cursor:pointer;transition:all .15s;
+}
+.lcard:active{transform:scale(.97);background:var(--card2)}
+.lw{font-size:clamp(20px,6vw,27px);font-weight:900;line-height:1.1}
+.lr{font-size:10px;color:var(--sub);margin-top:1px}
+.lm{font-weight:700;font-size:13px;margin-top:2px}
+
+/* ── Quiz ── */
+.qstart{text-align:center;padding:26px 14px}
+.qbig{font-family:'Fredoka One',cursive;font-size:clamp(20px,6vw,26px);margin-bottom:6px}
+.qprog{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);font-weight:700;margin-bottom:10px}
+.qcard{background:var(--card);border-radius:var(--r);padding:20px 14px;text-align:center;margin-bottom:14px;border:2px solid var(--ac)35}
+.qword{font-size:clamp(36px,11vw,50px);font-weight:900;line-height:1.1;margin-bottom:4px}
+.qrom{color:var(--sub);font-size:12px;margin-bottom:10px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.optbtn{
+  padding:13px 14px;border-radius:var(--rs);border:2px solid var(--ac)16;
+  background:var(--card);color:var(--tx);font-weight:700;font-size:13px;
+  text-align:left;transition:all .15s;
+}
+.optbtn:active:not(:disabled){background:var(--ac)14}
+.optbtn.cor{background:#22c55e16;border-color:#22c55e;color:#22c55e}
+.optbtn.wrg{background:#f8717116;border-color:#f87171;color:#f87171}
+.optbtn:disabled{cursor:not-allowed}
+.rscr{text-align:center;padding:24px 14px;animation:sup .4s ease-out}
+.rscore{font-size:clamp(40px,12vw,54px);font-weight:900;color:var(--ac);margin:9px 0 3px}
+.rxp{color:var(--gld);font-weight:800;font-size:14px;margin-bottom:14px}
+
+/* ── Words ── */
+.wfcard{background:var(--card);border-radius:var(--r);padding:13px;border:1px solid var(--ac)14;margin-bottom:10px}
+.wbig{font-size:clamp(24px,7vw,32px);font-weight:900;line-height:1}
+
+/* ── Profile ── */
+.pav{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 10px;box-shadow:0 0 22px var(--glow);animation:float 3s ease-in-out infinite}
+.pnm{font-weight:900;font-size:clamp(17px,5vw,22px);text-align:center}
+.psub{color:var(--sub);font-size:11px;text-align:center;margin-top:2px}
+.strow{display:flex;justify-content:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+.sti{text-align:center}
+.stico{font-size:18px;display:block}
+.stv{font-weight:900;font-size:16px;color:var(--ac)}
+.stl{font-size:10px;color:var(--sub)}
+.cbadge{background:#22c55e09;border:2px solid #22c55e22;border-radius:var(--rs);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.thgrid{display:flex;gap:6px;flex-wrap:wrap}
+.thsw{padding:6px 12px;border-radius:16px;font-weight:700;font-size:11px;border:2px solid transparent;background:var(--card2);color:var(--sub);transition:all .15s}
+.thsw.on{border-color:var(--ac);background:var(--ac)11;color:var(--ac)}
+.thsw:active{transform:scale(.93)}
+.scrow{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--ac)11;margin-bottom:5px;font-size:12px}
+.blogout{width:100%;padding:12px;border:none;border-radius:var(--rs);background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;font-weight:800;font-size:14px;box-shadow:0 3px 12px #f43f5e30;transition:transform .15s;margin-bottom:6px}
+.blogout:active{transform:scale(.96)}
+.stitle{font-weight:800;font-size:14px;margin-bottom:9px}
+
+/* ── Modal (bottom sheet) ── */
+.movl{position:fixed;inset:0;background:#0009;z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.movl.on{opacity:1;pointer-events:all}
+.mbox{
+  background:var(--card);border-radius:var(--r) var(--r) 0 0;
+  width:100%;max-width:520px;max-height:78vh;overflow-y:auto;
+  padding:16px 14px calc(16px + var(--sbot));
+  box-shadow:0 -6px 32px #00000066;animation:sup .28s ease-out;
+}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+.mtit{font-weight:900;font-size:16px}
+.mclose{background:none;border:none;color:var(--sub);font-size:22px;padding:3px;line-height:1}
+.mlg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mlc{background:var(--card2);border-radius:var(--rs);padding:11px 7px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.mlc:active{transform:scale(.93)}
+.mlc.sel{border-color:var(--ac)}
+</style>
+</head>
+<body>
+
+<div id="ptcl"></div>
+<div id="toast"></div>
+<div id="synci"></div>
+
+<!-- ═══ SPLASH ═══ -->
+<div id="splash">
+  <div class="sorb" style="width:min(420px,110vw);height:min(420px,110vw);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="sorb" style="width:190px;height:190px;top:8%;right:3%;animation-delay:.7s;opacity:.4"></div>
+  <div class="sorb" style="width:140px;height:140px;bottom:10%;left:2%;animation-delay:1.3s;opacity:.3"></div>
+
+  <div id="slogo">
+    <img src="lingozingo.png" alt="LangZingo" onerror="this.style.display='none';document.querySelector('.sfb').style.display='block'"/>
+    <span class="sfb">🦜</span>
+  </div>
+  <div id="stitle">LangZingo</div>
+  <div id="ssub">Learn languages the fun way ✨</div>
+  <div id="sbar"><div id="sfill"></div></div>
+
+  <div class="scred">
+    Made by
+    <a href="https://t.me/zade4ever" target="_blank" class="tgbtn">
+      <svg class="tgico" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.26 14.4l-2.95-.924c-.64-.203-.654-.64.135-.954l11.57-4.461c.537-.194 1.006.131.879.16z"/></svg>
+      @zade4ever
+    </a>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+
+  <!-- AUTH -->
+  <div id="asc" class="sc">
+    <div class="aorb" style="width:260px;height:260px;top:0%;left:-10%;background:radial-gradient(circle,var(--ac)10,transparent 70%);animation:gpulse 4s infinite"></div>
+    <div class="aorb" style="width:170px;height:170px;bottom:5%;right:-6%;background:radial-gradient(circle,#ec489910,transparent 70%);animation:gpulse 3.5s 1.2s infinite"></div>
+    <div class="alogo">
+      <div class="alogobox">
+        <img src="lingozingo.png" alt="" onerror="this.style.display='none';document.querySelector('.afb').style.display='block'"/>
+        <span class="afb">🦜</span>
+      </div>
+      <div class="atitle">LangZingo</div>
+    </div>
+    <div class="acard">
+      <div class="atabs">
+        <button class="atab on" id="tabl" onclick="swTab('login')">🔓 Login</button>
+        <button class="atab" id="tabs" onclick="swTab('signup')">✨ Sign Up</button>
+      </div>
+      <div class="fgrp">
+        <input id="fu" class="finp" placeholder="👤 Username" style="display:none"/>
+        <input id="fe" class="finp" type="email" placeholder="📧 Email"/>
+        <input id="fp" class="finp" type="password" placeholder="🔒 Password"/>
+        <input id="fc" class="finp" type="password" placeholder="🔒 Confirm password" style="display:none"/>
+      </div>
+      <div class="emsg" id="aerr"></div>
+      <button class="btnpri" id="asbtn" onclick="doAuth()">🚀 Let's Go!</button>
+      <div class="aftr">
+        Made with 💜 by
+        <a href="https://t.me/zade4ever" target="_blank" class="tgbtn">
+          <svg class="tgico" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.26 14.4l-2.95-.924c-.64-.203-.654-.64.135-.954l11.57-4.461c.537-.194 1.006.131.879.16z"/></svg>
+          @zade4ever
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- LANG SELECT -->
+  <div id="lsc" class="sc">
+    <div class="lshead">
+      <div class="lstitle">Pick Your Language 🌍</div>
+      <p style="color:var(--sub);margin-top:4px;font-size:13px">What do you want to master?</p>
+    </div>
+    <div class="lgrid" id="lgrid"></div>
+    <div style="height:14px"></div>
+  </div>
+
+  <!-- HOME -->
+  <div id="hsc" class="sc">
+    <!-- Header -->
+    <div class="hdr">
+      <div class="hlogo">
+        <img src="lingozingo.png" class="hlogoimg" onerror="this.style.display='none'"/>
+        LangZingo
+      </div>
+      <div class="hstats">
+        <div class="hpill" style="color:var(--gld)">💎<span id="hgem">50</span></div>
+        <div class="hpill" style="color:#f87171">❤️<span id="hht">5</span></div>
+        <div class="hpill" style="color:#fb923c">🔥<span id="hstr">1</span></div>
+        <button class="htbtn" onclick="cycleTheme()">🎨</button>
+      </div>
+    </div>
+    <!-- XP -->
+    <div class="xprow">
+      <div class="xplbls"><span>Lv <span id="hlv">1</span></span><span><span id="hxpc">0</span>/<span id="hxpm">100</span> XP</span></div>
+      <div class="xptrk"><div class="xpbar" id="xpb" style="width:0%"></div></div>
+    </div>
+
+    <!-- Tab content -->
+    <div class="tcont" id="tcont">
+
+      <!-- LEARN -->
+      <div class="tpnl on" id="p-learn">
+        <!-- Banner -->
+        <div class="card cacc" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-size:9px;color:var(--sub);font-weight:700;letter-spacing:.7px">LEARNING</div>
+            <div style="font-size:18px;font-weight:900;margin-top:2px" id="blname">—</div>
+            <div style="font-size:11px;color:var(--sub)" id="blen">—</div>
+          </div>
+          <button class="btnl" onclick="openLM()" style="padding:8px 12px;font-size:11px;flex-shrink:0">Change</button>
+        </div>
+
+        <!-- Voice Characters -->
+        <div class="vpnl">
+          <div class="vptit">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--ac)"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V21h2v-2.28c3.28-.49 6-3.3 6-6.72h-1.7z"/></svg>
+            Voice Characters
+          </div>
+          <div class="charrow" id="charrow">
+            <div style="color:var(--sub);font-size:12px;padding:6px 0">Select a language first</div>
+          </div>
+          <div class="sprow">
+            <span class="splbl">Speed:</span>
+            <button class="spbtn" onclick="setSp(.6,this)">Slow</button>
+            <button class="spbtn on" onclick="setSp(.85,this)">Normal</button>
+            <button class="spbtn" onclick="setSp(1.1,this)">Fast</button>
+            <button class="spbtn" onclick="setSp(1.3,this)">Quick</button>
+          </div>
+        </div>
+
+        <!-- Word of Day -->
+        <div class="card cgld">
+          <div class="wlbl">✦ WORD OF THE DAY</div>
+          <div class="wword" id="ww">—</div>
+          <div class="wroman" id="wr">—</div>
+          <div class="wmean" id="wm">—</div>
+          <div class="sbox">
+            <div class="snat" id="ws">—</div>
+            <div class="srom" id="wsr">—</div>
+            <div class="smean" id="wsm">—</div>
+          </div>
+          <button class="btnl" onclick="spkEl('ww')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+            Listen
+          </button>
+        </div>
+
+        <div class="stitle">Today's Lessons</div>
+        <div id="llist"></div>
+
+        <!-- Daily sentence -->
+        <div class="card cgrn">
+          <div style="font-size:9px;color:var(--grn);font-weight:800;letter-spacing:1.4px;margin-bottom:8px">✦ DAILY SENTENCE</div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:4px" id="dsn">—</div>
+          <div style="font-size:11px;color:var(--sub);margin-bottom:2px" id="dsr">—</div>
+          <div style="font-size:11px;color:var(--grn);margin-bottom:10px" id="dsm">—</div>
+          <button class="btnl btnlg" onclick="spkEl('dsn')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+            Hear sentence
+          </button>
+        </div>
+      </div>
+
+      <!-- QUIZ -->
+      <div class="tpnl" id="p-quiz"><div id="qcont"></div></div>
+
+      <!-- WORDS -->
+      <div class="tpnl" id="p-words">
+        <div class="stitle" id="wtit">All Words</div>
+        <div id="wlist"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="tpnl" id="p-profile">
+        <div class="card cacc" style="text-align:center">
+          <div class="pav">🦜</div>
+          <div class="pnm" id="pun">—</div>
+          <div class="psub" id="psub2">—</div>
+          <div class="strow">
+            <div class="sti"><span class="stico">🔥</span><div class="stv" id="pstr">0</div><div class="stl">Streak</div></div>
+            <div class="sti"><span class="stico">⭐</span><div class="stv" id="pxp">0</div><div class="stl">XP</div></div>
+            <div class="sti"><span class="stico">📚</span><div class="stv" id="pwd">0</div><div class="stl">Words</div></div>
+            <div class="sti"><span class="stico">🧠</span><div class="stv" id="pqz">0</div><div class="stl">Quizzes</div></div>
+          </div>
+        </div>
+        <div class="cbadge">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="var(--grn)"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+          <div><div style="font-weight:800;color:var(--grn);font-size:12px">Cloud Sync Active</div><div style="font-size:11px;color:var(--sub)">Progress saved on all devices</div></div>
+        </div>
+        <div class="card">
+          <div class="stitle" style="margin-bottom:8px">📊 Recent Scores</div>
+          <div id="qhlist"><div style="color:var(--sub);font-size:12px">No quizzes yet!</div></div>
+        </div>
+        <div class="card">
+          <div class="stitle" style="margin-bottom:8px">🎨 Theme</div>
+          <div class="thgrid">
+            <button class="thsw on" data-t="default" onclick="setTh('default',this)">🌑 Violet</button>
+            <button class="thsw" data-t="neon" onclick="setTh('neon',this)">⚡ Neon</button>
+            <button class="thsw" data-t="rose" onclick="setTh('rose',this)">🌹 Rose</button>
+            <button class="thsw" data-t="amber" onclick="setTh('amber',this)">🌅 Amber</button>
+            <button class="thsw" data-t="forest" onclick="setTh('forest',this)">🌲 Forest</button>
+            <button class="thsw" data-t="ocean" onclick="setTh('ocean',this)">🌊 Ocean</button>
+          </div>
+        </div>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span style="font-size:28px" id="plf">🌍</span>
+            <div><div style="font-weight:700;font-size:13px" id="pln">—</div><div style="color:var(--sub);font-size:11px" id="ple">—</div></div>
+          </div>
+          <button class="btnl" onclick="openLM()" style="padding:7px 12px;font-size:11px;flex-shrink:0">Change</button>
+        </div>
+        <div class="card" style="background:#0088cc09;border:2px solid #0088cc22">
+          <a href="https://t.me/zade4ever" target="_blank" style="text-decoration:none;display:flex;align-items:center;gap:11px">
+            <svg width="38" height="38" viewBox="0 0 240 240">
+              <defs><linearGradient id="tgg" x1="120" y1="10" x2="120" y2="230" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2aabee"/><stop offset="1" stop-color="#229ed9"/></linearGradient></defs>
+              <circle cx="120" cy="120" r="120" fill="url(#tgg)"/>
+              <path d="M57.1 126.9c30.6-13.3 51-22.1 61.4-26.4 29.3-12.2 35.4-14.3 39.3-14.4.9 0 2.8.2 4 1.3.8.8 1.1 1.9 1.2 2.7.1.8.2 2.5.1 3.9-1.5 15.9-8.1 54.5-11.5 72.3-1.4 7.5-4.2 10-6.9 10.2-5.9.5-10.3-3.9-16-7.6-8.9-5.8-13.9-9.4-22.5-15.1-9.9-6.5-3.5-10.1 2.2-16 1.5-1.5 27.1-24.8 27.6-26.9.1-.3.1-.6-.1-.7-.2-.2-.5-.1-.7 0-.3.1-5.6 3.6-15.8 10.5-15 10-29.4 14.8-29.4 14.8s-7.3 2.3-14.4-.1c-7.1-2.4-15.3-5.8-15.3-5.8s-5.7-3.8 4.8-7.7z" fill="#fff"/>
+            </svg>
+            <div><div style="font-weight:900;font-size:13px;color:var(--tx)">@zade4ever</div><div style="color:var(--sub);font-size:11px">Contact on Telegram</div></div>
+          </a>
+        </div>
+        <button class="blogout" onclick="doLogout()">🚪 Logout</button>
+        <div style="height:8px"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bnav">
+      <button class="nbtn on" id="nb-learn" onclick="swP('learn')"><span class="nbico">📚</span><span>Learn</span></button>
+      <button class="nbtn" id="nb-quiz" onclick="swP('quiz')"><span class="nbico">🧠</span><span>Quiz</span></button>
+      <button class="nbtn" id="nb-words" onclick="swP('words')"><span class="nbico">📖</span><span>Words</span></button>
+      <button class="nbtn" id="nb-profile" onclick="swP('profile')"><span class="nbico">👤</span><span>Me</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- LANG MODAL -->
+<div class="movl" id="lmod" onclick="closeLMOut(event)">
+  <div class="mbox">
+    <div class="mhdr">
+      <div class="mtit">Choose Language</div>
+      <button class="mclose" onclick="closeLM()">✕</button>
+    </div>
+    <div class="mlg" id="mlg"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ── Supabase ──────────────────────────────────────────────
+const SB = supabase.createClient(
+  'https://uphrtkhmvgidekouqrql.supabase.co',
+  'sb_publishable_0GpSfqdq3DnUHSD_dGTbZw_6MQNX3hm'
+);
+
+// ── Voice Characters (3 per language) ────────────────────
+// Each character has distinct pitch+rate to sound different
+const CHARS = {
+  ja: [
+    { id:'j0', nm:'Haruka', av:'👩', desc:'Calm & Clear',    pitch:1.1,  rate:0.82 },
+    { id:'j1', nm:'Kenji',  av:'👨', desc:'Deep Voice',      pitch:0.82, rate:0.85 },
+    { id:'j2', nm:'Yuki',   av:'🧒', desc:'Bright & Fun',    pitch:1.38, rate:1.05 }
+  ],
+  fa: [
+    { id:'f0', nm:'Shirin',  av:'👩', desc:'Warm & Soft',    pitch:1.1,  rate:0.82 },
+    { id:'f1', nm:'Dariush', av:'👨', desc:'Strong Voice',   pitch:0.82, rate:0.85 },
+    { id:'f2', nm:'Nika',    av:'🧒', desc:'Lively & Quick', pitch:1.35, rate:1.0  }
+  ],
+  ar: [
+    { id:'a0', nm:'Layla', av:'👩', desc:'Smooth & Warm',    pitch:1.1,  rate:0.8  },
+    { id:'a1', nm:'Omar',  av:'👨', desc:'Deep & Formal',    pitch:0.8,  rate:0.85 },
+    { id:'a2', nm:'Sami',  av:'🧒', desc:'Energetic',        pitch:1.3,  rate:1.05 }
+  ],
+  es: [
+    { id:'s0', nm:'Sofia',  av:'👩', desc:'Warm & Natural',  pitch:1.05, rate:0.85 },
+    { id:'s1', nm:'Carlos', av:'👨', desc:'Strong & Clear',  pitch:0.88, rate:0.88 },
+    { id:'s2', nm:'Luna',   av:'🧒', desc:'Playful & Fast',  pitch:1.3,  rate:1.05 }
+  ],
+  en: [
+    { id:'e0', nm:'Emma',  av:'👩', desc:'Clear & Warm',     pitch:1.1,  rate:0.88 },
+    { id:'e1', nm:'James', av:'👨', desc:'Deep & Calm',      pitch:0.85, rate:0.85 },
+    { id:'e2', nm:'Zoe',   av:'🧒', desc:'Bubbly & Bright',  pitch:1.35, rate:1.05 }
+  ],
+  tr: [
+    { id:'t0', nm:'Elif',  av:'👩', desc:'Warm & Clear',     pitch:1.1,  rate:0.82 },
+    { id:'t1', nm:'Ahmet', av:'👨', desc:'Deep & Steady',    pitch:0.85, rate:0.85 },
+    { id:'t2', nm:'Buse',  av:'🧒', desc:'Lively & Quick',   pitch:1.3,  rate:1.05 }
+  ],
+  zh: [
+    { id:'z0', nm:'Mei',  av:'👩', desc:'Smooth & Clear',    pitch:1.1,  rate:0.82 },
+    { id:'z1', nm:'Wei',  av:'👨', desc:'Deep & Formal',     pitch:0.85, rate:0.85 },
+    { id:'z2', nm:'Xiao', av:'🧒', desc:'Bright & Fast',     pitch:1.38, rate:1.1  }
+  ],
+  ru: [
+    { id:'r0', nm:'Katya', av:'👩', desc:'Warm & Smooth',    pitch:1.1,  rate:0.82 },
+    { id:'r1', nm:'Ivan',  av:'👨', desc:'Deep & Bold',      pitch:0.8,  rate:0.85 },
+    { id:'r2', nm:'Dasha', av:'🧒', desc:'Lively & Clear',   pitch:1.3,  rate:1.0  }
+  ],
+  fr: [
+    { id:'fr0', nm:'Camille', av:'👩', desc:'Elegant',       pitch:1.1,  rate:0.82 },
+    { id:'fr1', nm:'Louis',   av:'👨', desc:'Deep & Smooth', pitch:0.85, rate:0.85 },
+    { id:'fr2', nm:'Zoé',     av:'🧒', desc:'Bright & Fast', pitch:1.3,  rate:1.05 }
+  ],
+  de: [
+    { id:'d0', nm:'Lena', av:'👩', desc:'Clear & Precise',   pitch:1.05, rate:0.82 },
+    { id:'d1', nm:'Hans', av:'👨', desc:'Deep & Formal',     pitch:0.82, rate:0.85 },
+    { id:'d2', nm:'Mia',  av:'🧒', desc:'Lively & Quick',    pitch:1.3,  rate:1.05 }
+  ],
+  ko: [
+    { id:'k0', nm:'Jisoo',  av:'👩', desc:'Warm & Natural',  pitch:1.1,  rate:0.82 },
+    { id:'k1', nm:'Minjun', av:'👨', desc:'Deep & Calm',     pitch:0.85, rate:0.85 },
+    { id:'k2', nm:'Hana',   av:'🧒', desc:'Bright & Fast',   pitch:1.38, rate:1.1  }
+  ],
+  hi: [
+    { id:'h0', nm:'Priya', av:'👩', desc:'Warm & Soft',      pitch:1.1,  rate:0.82 },
+    { id:'h1', nm:'Rohan', av:'👨', desc:'Deep & Clear',     pitch:0.85, rate:0.85 },
+    { id:'h2', nm:'Anika', av:'🧒', desc:'Lively & Quick',   pitch:1.3,  rate:1.05 }
+  ],
+  pt: [
+    { id:'p0', nm:'Ana',   av:'👩', desc:'Warm & Smooth',    pitch:1.1,  rate:0.82 },
+    { id:'p1', nm:'Pedro', av:'👨', desc:'Deep & Bold',      pitch:0.85, rate:0.85 },
+    { id:'p2', nm:'Bia',   av:'🧒', desc:'Bright & Fast',    pitch:1.3,  rate:1.05 }
+  ],
+  it: [
+    { id:'i0', nm:'Giulia', av:'👩', desc:'Warm & Musical',  pitch:1.1,  rate:0.82 },
+    { id:'i1', nm:'Marco',  av:'👨', desc:'Deep & Rich',     pitch:0.85, rate:0.85 },
+    { id:'i2', nm:'Sofia',  av:'🧒', desc:'Bright & Lively', pitch:1.3,  rate:1.05 }
+  ],
+  th: [
+    { id:'th0', nm:'Nong', av:'👩', desc:'Soft & Clear',     pitch:1.1,  rate:0.82 },
+    { id:'th1', nm:'Chai', av:'👨', desc:'Deep & Calm',      pitch:0.85, rate:0.85 },
+    { id:'th2', nm:'Fah',  av:'🧒', desc:'Bright & Quick',   pitch:1.3,  rate:1.05 }
+  ],
+  vi: [
+    { id:'v0', nm:'Linh', av:'👩', desc:'Soft & Natural',    pitch:1.1,  rate:0.82 },
+    { id:'v1', nm:'Nam',  av:'👨', desc:'Deep & Steady',     pitch:0.85, rate:0.85 },
+    { id:'v2', nm:'Mai',  av:'🧒', desc:'Bright & Fast',     pitch:1.38, rate:1.05 }
+  ],
+  id: [
+    { id:'id0', nm:'Sari', av:'👩', desc:'Warm & Clear',     pitch:1.05, rate:0.82 },
+    { id:'id1', nm:'Budi', av:'👨', desc:'Deep & Calm',      pitch:0.85, rate:0.85 },
+    { id:'id2', nm:'Ayu',  av:'🧒', desc:'Lively & Quick',   pitch:1.3,  rate:1.05 }
+  ],
+  nl: [
+    { id:'n0', nm:'Emma', av:'👩', desc:'Clear & Warm',      pitch:1.05, rate:0.82 },
+    { id:'n1', nm:'Lars', av:'👨', desc:'Deep & Steady',     pitch:0.85, rate:0.85 },
+    { id:'n2', nm:'Fien', av:'🧒', desc:'Bright & Fast',     pitch:1.3,  rate:1.05 }
+  ],
+  pl: [
+    { id:'pl0', nm:'Ola',   av:'👩', desc:'Warm & Smooth',   pitch:1.05, rate:0.82 },
+    { id:'pl1', nm:'Marek', av:'👨', desc:'Deep & Bold',     pitch:0.85, rate:0.85 },
+    { id:'pl2', nm:'Zosia', av:'🧒', desc:'Bright & Quick',  pitch:1.3,  rate:1.05 }
+  ],
+  sv: [
+    { id:'sv0', nm:'Astrid', av:'👩', desc:'Clear & Melodic', pitch:1.1, rate:0.82 },
+    { id:'sv1', nm:'Erik',   av:'👨', desc:'Deep & Calm',     pitch:0.85,rate:0.85 },
+    { id:'sv2', nm:'Maja',   av:'🧒', desc:'Bright & Lively', pitch:1.3, rate:1.05 }
+  ],
+  uk: [
+    { id:'u0', nm:'Darya',  av:'👩', desc:'Warm & Soft',     pitch:1.1,  rate:0.82 },
+    { id:'u1', nm:'Mykola', av:'👨', desc:'Deep & Strong',   pitch:0.82, rate:0.85 },
+    { id:'u2', nm:'Oksana', av:'🧒', desc:'Lively & Clear',  pitch:1.3,  rate:1.05 }
+  ],
+  bn: [
+    { id:'b0', nm:'Riya',  av:'👩', desc:'Soft & Warm',      pitch:1.1,  rate:0.82 },
+    { id:'b1', nm:'Arjun', av:'👨', desc:'Deep & Clear',     pitch:0.85, rate:0.85 },
+    { id:'b2', nm:'Tara',  av:'🧒', desc:'Bright & Quick',   pitch:1.3,  rate:1.05 }
+  ],
+  sw: [
+    { id:'w0', nm:'Amina', av:'👩', desc:'Warm & Natural',   pitch:1.05, rate:0.82 },
+    { id:'w1', nm:'Jomo',  av:'👨', desc:'Deep & Bold',      pitch:0.85, rate:0.85 },
+    { id:'w2', nm:'Zuri',  av:'🧒', desc:'Bright & Lively',  pitch:1.3,  rate:1.05 }
+  ]
+};
+
+// ── Languages (no Israel) ────────────────────────────────
+const LANGS = [
+  { code:'ja', name:'日本語',       en:'Japanese',    flag:'🇯🇵', color:'#FF6B6B' },
+  { code:'fa', name:'فارسی',       en:'Persian',     flag:'🇮🇷', color:'#F7971E' },
+  { code:'ar', name:'العربية',     en:'Arabic',      flag:'🇸🇦', color:'#FFD700' },
+  { code:'es', name:'Español',     en:'Spanish',     flag:'🇪🇸', color:'#FF4757' },
+  { code:'en', name:'English',     en:'English',     flag:'🇬🇧', color:'#2ED573' },
+  { code:'tr', name:'Türkçe',      en:'Turkish',     flag:'🇹🇷', color:'#FF6348' },
+  { code:'zh', name:'中文',        en:'Chinese',     flag:'🇨🇳', color:'#ECCC68' },
+  { code:'ru', name:'Русский',     en:'Russian',     flag:'🇷🇺', color:'#A29BFE' },
+  { code:'fr', name:'Français',    en:'French',      flag:'🇫🇷', color:'#74B9FF' },
+  { code:'de', name:'Deutsch',     en:'German',      flag:'🇩🇪', color:'#55EFC4' },
+  { code:'ko', name:'한국어',       en:'Korean',      flag:'🇰🇷', color:'#FD79A8' },
+  { code:'hi', name:'हिन्दी',      en:'Hindi',       flag:'🇮🇳', color:'#FDCB6E' },
+  { code:'pt', name:'Português',   en:'Portuguese',  flag:'🇧🇷', color:'#00B894' },
+  { code:'it', name:'Italiano',    en:'Italian',     flag:'🇮🇹', color:'#6C5CE7' },
+  { code:'nl', name:'Nederlands',  en:'Dutch',       flag:'🇳🇱', color:'#E17055' },
+  { code:'pl', name:'Polski',      en:'Polish',      flag:'🇵🇱', color:'#D63031' },
+  { code:'sv', name:'Svenska',     en:'Swedish',     flag:'🇸🇪', color:'#0984E3' },
+  { code:'id', name:'Bahasa',      en:'Indonesian',  flag:'🇮🇩', color:'#E84393' },
+  { code:'th', name:'ภาษาไทย',    en:'Thai',        flag:'🇹🇭', color:'#00CEC9' },
+  { code:'vi', name:'Tiếng Việt',  en:'Vietnamese',  flag:'🇻🇳', color:'#FDCB6E' },
+  { code:'uk', name:'Українська',  en:'Ukrainian',   flag:'🇺🇦', color:'#74B9FF' },
+  { code:'bn', name:'বাংলা',       en:'Bengali',     flag:'🇧🇩', color:'#55EFC4' },
+  { code:'sw', name:'Kiswahili',   en:'Swahili',     flag:'🇰🇪', color:'#E17055' }
+];
+
+// ── Word Bank ─────────────────────────────────────────────
+const WB = {
+  ja:[
+    { w:'ありがとう', r:'Arigatou',   m:'Thank you',       s:'ありがとう、友達！',          sr:'Arigatou, tomodachi!',            sm:'Thank you, friend!' },
+    { w:'こんにちは', r:'Konnichiwa', m:'Hello',           s:'こんにちは、元気ですか？',     sr:'Konnichiwa, genki desu ka?',      sm:'Hello, how are you?' },
+    { w:'さくら',     r:'Sakura',     m:'Cherry blossom',  s:'さくらはきれいです',           sr:'Sakura wa kirei desu',            sm:'Cherry blossoms are beautiful' },
+    { w:'愛',         r:'Ai',         m:'Love',            s:'愛は美しい',                   sr:'Ai wa utsukushii',                sm:'Love is beautiful' },
+    { w:'水',         r:'Mizu',       m:'Water',           s:'水をください',                 sr:'Mizu o kudasai',                  sm:'Please give me water' },
+    { w:'空',         r:'Sora',       m:'Sky',             s:'空がきれいだ',                 sr:'Sora ga kirei da',                sm:'The sky is beautiful' }
+  ],
+  fa:[
+    { w:'سلام',     r:'Salaam',   m:'Hello/Peace',  s:'سلام، حالت خوبه؟',          sr:'Salaam, haalat khube?',           sm:'Hello, how are you?' },
+    { w:'ممنون',    r:'Mamnoon',  m:'Thank you',    s:'خیلی ممنون از کمکت',         sr:'Kheyli mamnoon az komakt',        sm:'Thank you very much' },
+    { w:'دوست',    r:'Doost',    m:'Friend',        s:'تو بهترین دوست منی',         sr:'To behtarin doost mani',          sm:'You are my best friend' },
+    { w:'عشق',     r:'Eshgh',    m:'Love',          s:'عشق زندگی است',              sr:'Eshgh zendegi ast',               sm:'Love is life' },
+    { w:'آب',      r:'Aab',      m:'Water',         s:'آب صاف است',                 sr:'Aab saaf ast',                    sm:'The water is clear' },
+    { w:'خورشید',  r:'Khorshid', m:'Sun',           s:'خورشید درخشان است',          sr:'Khorshid derakhshan ast',         sm:'The sun is shining' }
+  ],
+  ar:[
+    { w:'مرحبا',  r:'Marhaba', m:'Hello',      s:'مرحبا بك في بيتنا',     sr:'Marhaba bika fi baytina',     sm:'Welcome to our home' },
+    { w:'شكرا',  r:'Shukran', m:'Thank you',  s:'شكرا جزيلا لك',          sr:'Shukran jazeelan lak',        sm:'Thank you very much' },
+    { w:'حب',    r:'Hubb',    m:'Love',       s:'الحب نعمة كبيرة',        sr:"Al-hubb ni'ma kabeera",       sm:'Love is a great blessing' },
+    { w:'ماء',   r:"Maa'",   m:'Water',      s:'الماء حياة',             sr:"Al-maa' hayat",               sm:'Water is life' },
+    { w:'قمر',   r:'Qamar',  m:'Moon',       s:'القمر جميل الليلة',     sr:'Al-qamar jameel al-layla',    sm:'The moon is beautiful tonight' },
+    { w:'نجم',   r:'Najm',   m:'Star',       s:'النجوم تضيء الليل',     sr:'Al-nujoom tudee al-layl',     sm:'Stars light up the night' }
+  ],
+  es:[
+    { w:'Hola',    r:'Hola',    m:'Hello',      s:'¡Hola! ¿Cómo estás?',          sr:'¡Hola! ¿Cómo estás?',          sm:'Hello! How are you?' },
+    { w:'Gracias', r:'Gracias', m:'Thank you',  s:'Muchas gracias por tu ayuda',   sr:'Muchas gracias por tu ayuda',  sm:'Thank you very much' },
+    { w:'Amor',    r:'Amor',    m:'Love',       s:'El amor es hermoso',            sr:'El amor es hermoso',           sm:'Love is beautiful' },
+    { w:'Agua',    r:'Agua',    m:'Water',      s:'Necesito agua fría',            sr:'Necesito agua fría',           sm:'I need cold water' },
+    { w:'Sol',     r:'Sol',     m:'Sun',        s:'El sol brilla hoy',             sr:'El sol brilla hoy',            sm:'The sun shines today' },
+    { w:'Luna',    r:'Luna',    m:'Moon',       s:'La luna llena es mágica',       sr:'La luna llena es mágica',      sm:'The full moon is magical' }
+  ],
+  en:[
+    { w:'Serendipity', r:'Serendipity', m:'Happy accident',   s:'It was pure serendipity that we met', sr:'It was pure serendipity that we met', sm:'We met by happy chance' },
+    { w:'Ephemeral',   r:'Ephemeral',   m:'Short-lived',      s:'Youth is ephemeral and precious',     sr:'Youth is ephemeral and precious',     sm:"Youth doesn't last long" },
+    { w:'Luminous',    r:'Luminous',    m:'Glowing with light',s:'Her smile was luminous',             sr:'Her smile was luminous',              sm:'Her smile was radiant' },
+    { w:'Solitude',    r:'Solitude',    m:'Being alone',      s:'He found peace in solitude',          sr:'He found peace in solitude',          sm:'He felt peaceful when alone' },
+    { w:'Wanderlust',  r:'Wanderlust',  m:'Urge to travel',   s:'Wanderlust drives her adventures',    sr:'Wanderlust drives her adventures',    sm:'Love of travel leads to adventures' },
+    { w:'Sonder',      r:'Sonder',      m:'Others have full lives', s:'Sonder hit him on the busy street', sr:'Sonder hit him on the busy street', sm:'He realized every stranger has a story' }
+  ],
+  tr:[
+    { w:'Merhaba',  r:'Merhaba',  m:'Hello',      s:'Merhaba, nasılsın?',      sr:'Merhaba, nasılsın?',     sm:'Hello, how are you?' },
+    { w:'Teşekkür', r:'Teşekkür', m:'Thank you',  s:'Çok teşekkür ederim',     sr:'Çok teşekkür ederim',    sm:'Thank you very much' },
+    { w:'Aşk',      r:'Aşk',      m:'Love',       s:'Aşk güzeldir',            sr:'Aşk güzeldir',           sm:'Love is beautiful' },
+    { w:'Su',       r:'Su',       m:'Water',      s:'Su hayat verir',           sr:'Su hayat verir',         sm:'Water gives life' },
+    { w:'Ay',       r:'Ay',       m:'Moon',       s:'Ay bu gece çok güzel',    sr:'Ay bu gece çok güzel',   sm:'The moon is beautiful tonight' },
+    { w:'Güneş',    r:'Güneş',    m:'Sun',        s:'Güneş bugün parlıyor',    sr:'Güneş bugün parlıyor',   sm:'The sun is shining today' }
+  ],
+  zh:[
+    { w:'你好',   r:'Nǐ hǎo',     m:'Hello',      s:'你好，你今天怎么样？',      sr:'Nǐ hǎo, nǐ jīntiān zěnme yàng?', sm:'Hello, how are you today?' },
+    { w:'谢谢',   r:'Xièxie',     m:'Thank you',  s:'非常谢谢你的帮助',          sr:'Fēicháng xièxie nǐ de bāngzhù',  sm:'Thank you very much' },
+    { w:'爱',     r:'Ài',         m:'Love',       s:'爱是最美的',               sr:'Ài shì zuì měi de',               sm:'Love is the most beautiful' },
+    { w:'水',     r:'Shuǐ',       m:'Water',      s:'我需要水',                 sr:'Wǒ xūyào shuǐ',                  sm:'I need water' },
+    { w:'月亮',   r:'Yuèliàng',   m:'Moon',       s:'月亮很亮',                 sr:'Yuèliàng hěn liàng',              sm:'The moon is very bright' },
+    { w:'太阳',   r:'Tàiyáng',    m:'Sun',        s:'太阳从东方升起',            sr:'Tàiyáng cóng dōngfāng shēngqǐ',  sm:'The sun rises from the east' }
+  ],
+  ru:[
+    { w:'Привет',   r:'Privet',   m:'Hello',      s:'Привет, как дела?',           sr:'Privet, kak dela?',               sm:'Hello, how are you?' },
+    { w:'Спасибо',  r:'Spasibo',  m:'Thank you',  s:'Большое спасибо за помощь',   sr:"Bol'shoye spasibo za pomoshch'",  sm:'Thank you very much' },
+    { w:'Любовь',   r:"Lyubov'",  m:'Love',       s:'Любовь прекрасна',            sr:"Lyubov' prekrasna",               sm:'Love is beautiful' },
+    { w:'Вода',     r:'Voda',     m:'Water',      s:'Вода это жизнь',              sr:"Voda eto zhizn'",                 sm:'Water is life' },
+    { w:'Луна',     r:'Luna',     m:'Moon',       s:'Луна светит ночью',           sr:"Luna svetit noch'yu",             sm:'The moon shines at night' },
+    { w:'Звезда',   r:'Zvezda',   m:'Star',       s:'Звёзды красивы',              sr:'Zvyozdy krasivy',                 sm:'Stars are beautiful' }
+  ],
+  fr:[
+    { w:'Bonjour', r:'Bonjour', m:'Hello',      s:'Bonjour, comment allez-vous?', sr:'Bonjour, comment allez-vous?', sm:'Hello, how are you?' },
+    { w:'Merci',   r:'Merci',   m:'Thank you',  s:'Merci beaucoup pour votre aide',sr:'Merci beaucoup pour votre aide',sm:'Thank you very much' },
+    { w:'Amour',   r:'Amour',   m:'Love',       s:"L'amour est magnifique",        sr:"L'amour est magnifique",        sm:'Love is magnificent' },
+    { w:'Eau',     r:'Eau',     m:'Water',      s:"L'eau est essentielle",         sr:"L'eau est essentielle",         sm:'Water is essential' },
+    { w:'Lune',    r:'Lune',    m:'Moon',       s:'La lune brille ce soir',        sr:'La lune brille ce soir',        sm:'The moon shines tonight' },
+    { w:'Étoile',  r:'Étoile',  m:'Star',       s:'Les étoiles sont belles',       sr:'Les étoiles sont belles',       sm:'The stars are beautiful' }
+  ],
+  de:[
+    { w:'Hallo',   r:'Hallo',   m:'Hello',      s:'Hallo, wie geht es dir?',       sr:'Hallo, wie geht es dir?',       sm:'Hello, how are you?' },
+    { w:'Danke',   r:'Danke',   m:'Thank you',  s:'Vielen Dank für deine Hilfe',   sr:'Vielen Dank für deine Hilfe',   sm:'Thank you very much' },
+    { w:'Liebe',   r:'Liebe',   m:'Love',       s:'Liebe ist wunderschön',         sr:'Liebe ist wunderschön',         sm:'Love is wonderful' },
+    { w:'Wasser',  r:'Wasser',  m:'Water',      s:'Wasser ist Leben',              sr:'Wasser ist Leben',              sm:'Water is life' },
+    { w:'Mond',    r:'Mond',    m:'Moon',       s:'Der Mond leuchtet hell',         sr:'Der Mond leuchtet hell',        sm:'The moon shines brightly' },
+    { w:'Stern',   r:'Stern',   m:'Star',       s:'Die Sterne leuchten schön',     sr:'Die Sterne leuchten schön',     sm:'The stars shine beautifully' }
+  ],
+  ko:[
+    { w:'안녕하세요', r:'Annyeonghaseyo', m:'Hello',      s:'안녕하세요, 잘 지내세요?', sr:'Annyeonghaseyo, jal jinaeseyo?', sm:'Hello, how are you?' },
+    { w:'감사합니다', r:'Gamsahamnida',   m:'Thank you',  s:'도움에 감사합니다',           sr:'Doume gamsahamnida',            sm:'Thank you for the help' },
+    { w:'사랑',      r:'Sarang',         m:'Love',       s:'사랑은 아름답다',              sr:'Sarangeun areumdapda',          sm:'Love is beautiful' },
+    { w:'물',        r:'Mul',            m:'Water',      s:'물이 필요해요',                sr:'Muri piryohaeyo',               sm:'I need water' },
+    { w:'달',        r:'Dal',            m:'Moon',       s:'달이 밝게 빛나요',             sr:'Dari balgge bitnayo',           sm:'The moon shines brightly' },
+    { w:'별',        r:'Byeol',          m:'Star',       s:'별이 아름다워요',              sr:'Byeori areumdawoyo',            sm:'The stars are beautiful' }
+  ],
+  hi:[
+    { w:'नमस्ते',   r:'Namaste',    m:'Hello',      s:'नमस्ते, आप कैसे हैं?',         sr:'Namaste, aap kaise hain?',       sm:'Hello, how are you?' },
+    { w:'धन्यवाद',  r:'Dhanyavaad', m:'Thank you',  s:'आपकी मदद के लिए धन्यवाद',      sr:'Aapki madad ke liye dhanyavaad', sm:'Thank you for your help' },
+    { w:'प्यार',    r:'Pyaar',      m:'Love',       s:'प्यार जीवन है',                 sr:'Pyaar jeevan hai',               sm:'Love is life' },
+    { w:'पानी',     r:'Paani',      m:'Water',      s:'मुझे पानी चाहिए',              sr:'Mujhe paani chahiye',             sm:'I need water' },
+    { w:'चाँद',     r:'Chaand',     m:'Moon',       s:'चाँद बहुत सुंदर है',           sr:'Chaand bahut sundar hai',         sm:'The moon is very beautiful' },
+    { w:'तारा',     r:'Taara',      m:'Star',       s:'तारे रात को चमकते हैं',        sr:'Taare raat ko chamakte hain',     sm:'Stars shine at night' }
+  ],
+  pt:[
+    { w:'Olá',      r:'Olá',      m:'Hello',      s:'Olá, como vai você?',     sr:'Olá, como vai você?',    sm:'Hello, how are you?' },
+    { w:'Obrigado', r:'Obrigado', m:'Thank you',  s:'Muito obrigado pela ajuda',sr:'Muito obrigado pela ajuda',sm:'Thank you very much' },
+    { w:'Amor',     r:'Amor',     m:'Love',       s:'O amor é lindo',          sr:'O amor é lindo',         sm:'Love is beautiful' },
+    { w:'Água',     r:'Água',     m:'Water',      s:'Preciso de água',         sr:'Preciso de água',        sm:'I need water' },
+    { w:'Lua',      r:'Lua',      m:'Moon',       s:'A lua está brilhando',    sr:'A lua está brilhando',   sm:'The moon is shining' },
+    { w:'Estrela',  r:'Estrela',  m:'Star',       s:'As estrelas são lindas',  sr:'As estrelas são lindas', sm:'The stars are beautiful' }
+  ],
+  it:[
+    { w:'Ciao',    r:'Ciao',    m:'Hello/Bye',  s:'Ciao, come stai?',               sr:'Ciao, come stai?',              sm:'Hello, how are you?' },
+    { w:'Grazie',  r:'Grazie',  m:'Thank you',  s:'Grazie mille per il tuo aiuto',  sr:'Grazie mille per il tuo aiuto', sm:'Thank you very much' },
+    { w:'Amore',   r:'Amore',   m:'Love',       s:"L'amore è bellissimo",           sr:"L'amore è bellissimo",          sm:'Love is very beautiful' },
+    { w:'Acqua',   r:'Acqua',   m:'Water',      s:"Ho bisogno d'acqua",             sr:"Ho bisogno d'acqua",            sm:'I need water' },
+    { w:'Luna',    r:'Luna',    m:'Moon',       s:'La luna splende stanotte',        sr:'La luna splende stanotte',      sm:'The moon shines tonight' },
+    { w:'Stella',  r:'Stella',  m:'Star',       s:'Le stelle sono bellissime',       sr:'Le stelle sono bellissime',     sm:'The stars are beautiful' }
+  ],
+  th:[
+    { w:'สวัสดี',     r:'Sawasdee', m:'Hello',      s:'สวัสดีครับ',       sr:'Sawasdee khrap',      sm:'Hello!' },
+    { w:'ขอบคุณ',     r:'Khob khun',m:'Thank you',  s:'ขอบคุณมาก',        sr:'Khob khun maak',      sm:'Thank you very much' },
+    { w:'รัก',        r:'Rak',      m:'Love',       s:'รักเป็นสิ่งสวยงาม', sr:'Rak pen sing suay',  sm:'Love is beautiful' },
+    { w:'น้ำ',        r:'Nam',      m:'Water',      s:'ฉันต้องการน้ำ',     sr:'Chan tong kan nam',   sm:'I need water' },
+    { w:'ดวงจันทร์',  r:'Duang jan',m:'Moon',       s:'ดวงจันทร์สวยมาก',   sr:'Duang jan suay mak',  sm:'The moon is very beautiful' },
+    { w:'ดาว',        r:'Dao',      m:'Star',       s:'ดาวส่องแสง',        sr:'Dao song saeng',      sm:'Stars are shining' }
+  ]
+};
+function getW(c) { return WB[c] || WB.en; }
+
+// ── Preview words for character selection ─────────────────
+const PREVIEWS = {
+  ja:'こんにちは', fa:'سلام',    ar:'مرحبا',    es:'Hola',
+  en:'Hello',      tr:'Merhaba',  zh:'你好',      ru:'Привет',
+  fr:'Bonjour',    de:'Hallo',    ko:'안녕하세요', hi:'नमस्ते',
+  pt:'Olá',        it:'Ciao',     th:'สวัสดี',   vi:'Xin chào',
+  id:'Halo',       nl:'Hallo',    pl:'Cześć',     sv:'Hej',
+  uk:'Привіт',     bn:'হ্যালো',   sw:'Habari'
+};
+
+// ── State ─────────────────────────────────────────────────
+let CU = null;
+let PR = null;
+let AM = 'login';
+let CC = null;
+let SPR = 0.85;
+let CTH = 'default';
+let QS = null;
+const TLIST = ['default','neon','rose','amber','forest','ocean'];
+
+// ── Init ─────────────────────────────────────────────────
+window.addEventListener('load', async function() {
+  buildGrids();
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function() {};
+  }
+  try {
+    const res = await SB.auth.getSession();
+    if (res.data.session) {
+      CU = res.data.session.user;
+      await loadPR(CU.id);
+    } else {
+      setTimeout(function() { hideSplash('asc'); }, 2600);
+    }
+  } catch(e) {
+    setTimeout(function() { hideSplash('asc'); }, 2600);
+  }
+  SB.auth.onAuthStateChange(function(event, session) {
+    if (!session) { CU = null; PR = null; }
+  });
+});
+
+function hideSplash(scId) {
+  var sp = document.getElementById('splash');
+  sp.classList.add('out');
+  setTimeout(function() {
+    sp.style.display = 'none';
+    showSc(scId);
+  }, 500);
+}
+
+function showSc(id) {
+  document.querySelectorAll('.sc').forEach(function(s) { s.classList.remove('on'); });
+  document.getElementById(id).classList.add('on');
+}
+
+// ── Auth ─────────────────────────────────────────────────
+function swTab(m) {
+  AM = m;
+  document.getElementById('tabl').classList.toggle('on', m === 'login');
+  document.getElementById('tabs').classList.toggle('on', m === 'signup');
+  document.getElementById('fu').style.display = m === 'signup' ? 'block' : 'none';
+  document.getElementById('fc').style.display = m === 'signup' ? 'block' : 'none';
+  document.getElementById('asbtn').textContent = m === 'login' ? "🚀 Let's Go!" : '🎉 Create Account';
+  setErr('');
+}
+
+function setErr(msg) {
+  var e = document.getElementById('aerr');
+  e.textContent = msg;
+  if (msg) { e.classList.add('on'); } else { e.classList.remove('on'); }
+}
+
+async function doAuth() {
+  setErr('');
+  var btn = document.getElementById('asbtn');
+  btn.disabled = true;
+  btn.textContent = '⏳';
+
+  var email = document.getElementById('fe').value.trim();
+  var pass  = document.getElementById('fp').value;
+  var uname = document.getElementById('fu').value.trim();
+  var conf  = document.getElementById('fc').value;
+
+  if (!email || !pass) {
+    setErr('Please fill all fields');
+    resetBtn(); return;
+  }
+
+  if (AM === 'signup') {
+    if (!uname)        { setErr('Username is required');       resetBtn(); return; }
+    if (pass.length<6) { setErr('Password must be 6+ chars');  resetBtn(); return; }
+    if (pass !== conf) { setErr("Passwords don't match");      resetBtn(); return; }
+
+    try {
+      var tk = await SB.rpc('is_username_taken', { uname: uname });
+      if (tk.data) { setErr('Username already taken 😅'); resetBtn(); return; }
+    } catch(e) {}
+
+    var su = await SB.auth.signUp({ email: email, password: pass, options: { data: { username: uname } } });
+    if (su.error) { setErr(su.error.message); resetBtn(); return; }
+    CU = su.data.user;
+    await loadPR(CU.id);
+    celebrate(); playFX('level'); toast('🎉 Welcome to LangZingo!');
+
+  } else {
+    var si = await SB.auth.signInWithPassword({ email: email, password: pass });
+    if (si.error) { setErr('Invalid email or password'); resetBtn(); return; }
+    CU = si.data.user;
+    await loadPR(CU.id);
+    playFX('click'); toast('👋 Welcome back!');
+  }
+  btn.disabled = false;
+
+  function resetBtn() {
+    btn.disabled = false;
+    btn.textContent = AM === 'login' ? "🚀 Let's Go!" : '🎉 Create Account';
+  }
+}
+
+async function doLogout() {
+  await SB.auth.signOut();
+  CU = null; PR = null;
+  showSc('asc'); playFX('click');
+}
+
+// ── Profile ───────────────────────────────────────────────
+async function loadPR(uid) {
+  var res = await SB.from('profiles').select('*').eq('id', uid).single();
+  if (res.error) { toast('Could not load profile', 'err'); hideSplash('asc'); return; }
+  PR = res.data;
+  hideSplash(PR.selected_language ? 'hsc' : 'lsc');
+  if (PR.selected_language) {
+    renderHome();
+    buildCharBtns(PR.selected_language);
+  }
+}
+
+async function savePR(updates) {
+  if (!CU) return;
+  showSync('saving');
+  updates.last_active = new Date().toISOString();
+  var res = await SB.from('profiles').update(updates).eq('id', CU.id).select().single();
+  if (res.error) { showSync('error'); toast('Sync failed', 'err'); return; }
+  PR = res.data;
+  showSync('saved');
+  updHdr();
+}
+
+function showSync(s) {
+  var b = document.getElementById('synci');
+  b.classList.add('show');
+  if (s === 'saving') { b.textContent = '☁️ Syncing…'; b.style.color = 'var(--sub)'; }
+  if (s === 'saved')  { b.textContent = '✅ Saved'; b.style.color = 'var(--grn)'; setTimeout(function() { b.classList.remove('show'); }, 2200); }
+  if (s === 'error')  { b.textContent = '⚠️ Error'; b.style.color = 'var(--red)'; setTimeout(function() { b.classList.remove('show'); }, 3000); }
+}
+
+// ── Grids ─────────────────────────────────────────────────
+function buildGrids() {
+  var lg = document.getElementById('lgrid');
+  lg.innerHTML = LANGS.map(function(l, i) {
+    return '<div class="lgc" style="animation-delay:' + (i * 0.04) + 's" onclick="selLang(\'' + l.code + '\')">' +
+      '<span class="lgflag">' + l.flag + '</span>' +
+      '<div class="lgnm" style="color:' + l.color + '">' + l.name + '</div>' +
+      '<div class="lgen">' + l.en + '</div>' +
+      '</div>';
+  }).join('');
+
+  var ml = document.getElementById('mlg');
+  ml.innerHTML = LANGS.map(function(l) {
+    return '<div class="mlc" id="mlc-' + l.code + '" onclick="selLang(\'' + l.code + '\')">' +
+      '<div style="font-size:26px">' + l.flag + '</div>' +
+      '<div style="font-weight:700;font-size:12px;color:' + l.color + ';margin-top:3px">' + l.name + '</div>' +
+      '<div style="font-size:10px;color:var(--sub)">' + l.en + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function selLang(code) {
+  playFX('level'); celebrate();
+  await savePR({ selected_language: code });
+  closeLM();
+  if (document.getElementById('lsc').classList.contains('on')) { showSc('hsc'); }
+  renderHome();
+  buildCharBtns(code);
+  toast('🌍 Language set! Let\'s go!');
+  document.querySelectorAll('.mlc').forEach(function(c) { c.classList.remove('sel'); });
+  var sel = document.getElementById('mlc-' + code);
+  if (sel) sel.classList.add('sel');
+}
+
+// ── Voice Characters ──────────────────────────────────────
+function buildCharBtns(langCode) {
+  var chars = CHARS[langCode] || [
+    { id:'x0', nm:'Alex',  av:'👩', desc:'Calm & Clear',    pitch:1.0,  rate:0.85 },
+    { id:'x1', nm:'Sam',   av:'👨', desc:'Deep & Steady',   pitch:0.85, rate:0.85 },
+    { id:'x2', nm:'Riley', av:'🧒', desc:'Bright & Quick',  pitch:1.3,  rate:1.05 }
+  ];
+  CC = chars[0];
+  var row = document.getElementById('charrow');
+  if (!row) return;
+  row.innerHTML = chars.map(function(c, i) {
+    return '<button class="chbtn' + (i === 0 ? ' on' : '') + '" id="cb-' + c.id + '" onclick="selChar(\'' + c.id + '\',\'' + langCode + '\')">' +
+      '<span class="chav">' + c.av + '</span>' +
+      '<span class="chnm">' + c.nm + '</span>' +
+      '<span class="chdesc">' + c.desc + '</span>' +
+      '</button>';
+  }).join('');
+}
+
+function selChar(id, langCode) {
+  var chars = CHARS[langCode] || [];
+  var found = null;
+  for (var i = 0; i < chars.length; i++) {
+    if (chars[i].id === id) { found = chars[i]; break; }
+  }
+  CC = found || chars[0];
+  document.querySelectorAll('.chbtn').forEach(function(b) { b.classList.remove('on'); });
+  var cb = document.getElementById('cb-' + id);
+  if (cb) cb.classList.add('on');
+  playFX('click');
+  spkRaw(PREVIEWS[langCode] || 'Hello');
+}
+
+function setSp(r, btn) {
+  SPR = r;
+  document.querySelectorAll('.spbtn').forEach(function(b) { b.classList.remove('on'); });
+  btn.classList.add('on');
+  playFX('click');
+}
+
+// ── TTS ───────────────────────────────────────────────────
+function spkEl(id) {
+  var el = document.getElementById(id);
+  if (el) spkRaw(el.textContent);
+}
+
+function spkRaw(text) {
+  if (!window.speechSynthesis) { toast('Speech not supported', 'err'); return; }
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  var voices = window.speechSynthesis.getVoices();
+  var hint = (PR && PR.selected_language) ? PR.selected_language : 'en';
+  var voice = null;
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang.toLowerCase() === hint.toLowerCase()) { voice = voices[i]; break; }
+  }
+  if (!voice) {
+    var prefix = hint.split('-')[0].toLowerCase();
+    for (var j = 0; j < voices.length; j++) {
+      if (voices[j].lang.toLowerCase().startsWith(prefix)) { voice = voices[j]; break; }
+    }
+  }
+  if (voice) u.voice = voice;
+  u.lang  = hint;
+  u.pitch = CC ? CC.pitch : 1.0;
+  u.rate  = (CC ? CC.rate : 0.85) * (SPR / 0.85);
+  window.speechSynthesis.speak(u);
+  playFX('click');
+}
+
+// ── Home ─────────────────────────────────────────────────
+function renderHome() {
+  if (!PR) return;
+  updHdr();
+  var lang = null;
+  for (var i = 0; i < LANGS.length; i++) {
+    if (LANGS[i].code === PR.selected_language) { lang = LANGS[i]; break; }
+  }
+  if (!lang) return;
+
+  document.getElementById('blname').textContent = lang.flag + ' ' + lang.name;
+  document.getElementById('blen').textContent = lang.en;
+
+  var words = getW(PR.selected_language);
+  var wod = words[new Date().getDate() % words.length];
+
+  document.getElementById('ww').textContent  = wod.w;
+  document.getElementById('wr').textContent  = wod.r;
+  document.getElementById('wm').textContent  = wod.m;
+  document.getElementById('ws').textContent  = wod.s;
+  document.getElementById('wsr').textContent = wod.sr;
+  document.getElementById('wsm').textContent = wod.sm;
+  document.getElementById('dsn').textContent = wod.s;
+  document.getElementById('dsr').textContent = wod.sr;
+  document.getElementById('dsm').textContent = wod.sm;
+
+  var ll = document.getElementById('llist');
+  ll.innerHTML = words.map(function(wd) {
+    return '<div class="lcard" onclick="spkRaw(' + JSON.stringify(wd.w) + ')">' +
+      '<div>' +
+      '<div class="lw" style="color:' + lang.color + '">' + wd.w + '</div>' +
+      '<div class="lr">' + wd.r + '</div>' +
+      '<div class="lm">' + wd.m + '</div>' +
+      '</div>' +
+      '<span style="font-size:20px;flex-shrink:0">🔊</span>' +
+      '</div>';
+  }).join('');
+}
+
+function updHdr() {
+  if (!PR) return;
+  document.getElementById('hgem').textContent  = PR.gems   || 50;
+  document.getElementById('hht').textContent   = PR.hearts || 5;
+  document.getElementById('hstr').textContent  = PR.streak || 1;
+  document.getElementById('hlv').textContent   = PR.level  || 1;
+  var max = (PR.level || 1) * 100;
+  var cur = (PR.xp || 0) % max;
+  document.getElementById('hxpc').textContent = cur;
+  document.getElementById('hxpm').textContent = max;
+  document.getElementById('xpb').style.width  = (cur / max * 100) + '%';
+}
+
+// ── Panels ────────────────────────────────────────────────
+function swP(tab) {
+  playFX('click');
+  document.querySelectorAll('.tpnl').forEach(function(p) { p.classList.remove('on'); });
+  document.querySelectorAll('.nbtn').forEach(function(b) { b.classList.remove('on'); });
+  document.getElementById('p-' + tab).classList.add('on');
+  document.getElementById('nb-' + tab).classList.add('on');
+  document.getElementById('tcont').scrollTop = 0;
+  if (tab === 'quiz')    renderQS();
+  if (tab === 'words')   renderWords();
+  if (tab === 'profile') renderProf();
+}
+
+// ── Words ─────────────────────────────────────────────────
+function renderWords() {
+  if (!PR) return;
+  var lang = null;
+  for (var i = 0; i < LANGS.length; i++) {
+    if (LANGS[i].code === PR.selected_language) { lang = LANGS[i]; break; }
+  }
+  var words = getW(PR.selected_language);
+  document.getElementById('wtit').textContent = 'All Words — ' + (lang ? lang.flag + ' ' + lang.en : '');
+  document.getElementById('wlist').innerHTML = words.map(function(wd) {
+    var color = lang ? lang.color : 'var(--ac)';
+    return '<div class="wfcard">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px">' +
+        '<div>' +
+          '<div class="wbig" style="color:' + color + '">' + wd.w + '</div>' +
+          '<div style="color:var(--sub);font-size:11px;margin-top:1px">' + wd.r + '</div>' +
+          '<div style="font-weight:700;font-size:13px;margin-top:2px">' + wd.m + '</div>' +
+        '</div>' +
+        '<button class="btnl" onclick="spkRaw(' + JSON.stringify(wd.w) + ')" style="padding:7px 11px;font-size:11px;flex-shrink:0">🔊</button>' +
+      '</div>' +
+      '<div class="sbox">' +
+        '<div class="snat">' + wd.s + '</div>' +
+        '<div class="srom">' + wd.sr + '</div>' +
+        '<div class="smean">' + wd.sm + '</div>' +
+      '</div>' +
+      '<button class="btnl btnlg" onclick="spkRaw(' + JSON.stringify(wd.s) + ')" style="padding:7px 12px;font-size:11px;margin-top:4px">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>' +
+        ' Hear sentence' +
+      '</button>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Quiz ─────────────────────────────────────────────────
+function renderQS() {
+  var langName = '';
+  if (PR && PR.selected_language) {
+    for (var i = 0; i < LANGS.length; i++) {
+      if (LANGS[i].code === PR.selected_language) { langName = LANGS[i].en; break; }
+    }
+  }
+  document.getElementById('qcont').innerHTML =
+    '<div class="qstart">' +
+      '<div style="font-size:64px;animation:float 3s ease-in-out infinite;margin-bottom:10px">🧠</div>' +
+      '<div class="qbig">Daily Quiz</div>' +
+      '<p style="color:var(--sub);margin-bottom:22px;font-size:13px">Test your ' + langName + ' skills!</p>' +
+      '<button class="btnpri" style="max-width:200px;margin:0 auto" onclick="startQ()">Start Quiz 🚀</button>' +
+    '</div>';
+}
+
+function startQ() {
+  var words = getW(PR ? PR.selected_language : 'en');
+  var sh = words.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 5);
+  QS = { questions: sh, idx: 0, score: 0, total: 0 };
+  renderQQ();
+  playFX('click');
+}
+
+function renderQQ() {
+  if (!QS) return;
+  var q = QS.questions[QS.idx];
+  var lang = null;
+  if (PR && PR.selected_language) {
+    for (var i = 0; i < LANGS.length; i++) {
+      if (LANGS[i].code === PR.selected_language) { lang = LANGS[i]; break; }
+    }
+  }
+  var color = lang ? lang.color : 'var(--ac)';
+  var others = [];
+  for (var j = 0; j < QS.questions.length; j++) {
+    if (j !== QS.idx) others.push(QS.questions[j].m);
+  }
+  var opts = [q.m].concat(others.slice(0, 3)).sort(function() { return Math.random() - 0.5; });
+
+  document.getElementById('qcont').innerHTML =
+    '<div class="qprog"><span>Q ' + (QS.idx + 1) + '/' + QS.questions.length + '</span><span>Score: ' + QS.score + ' ⭐</span></div>' +
+    '<div class="qcard">' +
+      '<div style="font-size:9px;color:var(--sub);font-weight:700;letter-spacing:1px;margin-bottom:7px">WHAT DOES THIS MEAN?</div>' +
+      '<div class="qword" style="color:' + color + '">' + q.w + '</div>' +
+      '<div class="qrom">' + q.r + '</div>' +
+      '<button class="btnl" style="padding:7px 13px;font-size:11px" onclick="spkRaw(' + JSON.stringify(q.w) + ')">🔊 Hear it</button>' +
+    '</div>' +
+    '<div class="opts">' +
+      opts.map(function(o) {
+        return '<button class="optbtn" onclick="ansQ(this,' + JSON.stringify(o) + ',' + JSON.stringify(q.m) + ')">' + o + '</button>';
+      }).join('') +
+    '</div>';
+}
+
+async function ansQ(btn, chosen, correct) {
+  document.querySelectorAll('.optbtn').forEach(function(b) {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('cor');
+    else if (b.textContent === chosen && chosen !== correct) b.classList.add('wrg');
+  });
+
+  var ok = chosen === correct;
+  if (ok) { playFX('correct'); celebrate(); QS.score++; }
+  else    { playFX('wrong'); }
+  QS.total++;
+
+  setTimeout(async function() {
+    QS.idx++;
+    if (QS.idx < QS.questions.length) {
+      renderQQ(); return;
+    }
+    // Quiz done
+    var xp = QS.score * 12;
+    try {
+      await SB.from('quiz_scores').insert({
+        user_id: CU.id,
+        language: PR.selected_language,
+        score: QS.score,
+        total: QS.total,
+        xp_earned: xp
+      });
+    } catch(e) {}
+
+    var nx = (PR.xp || 0) + xp;
+    var nl = Math.floor(nx / 100) + 1;
+    var dl = nl > (PR.level || 1);
+    await savePR({ xp: nx, level: nl, words_learned: (PR.words_learned || 0) + QS.score, quizzes_done: (PR.quizzes_done || 0) + 1 });
+    if (dl) { playFX('level'); toast('🏆 Level Up! Now Level ' + nl + '!', 'ok'); }
+
+    var icon = QS.score === QS.total ? '🏆' : QS.score >= QS.total / 2 ? '⭐' : '💪';
+    var msg  = QS.score === QS.total ? 'Perfect!' : 'Good Job!';
+    document.getElementById('qcont').innerHTML =
+      '<div class="rscr">' +
+        '<div style="font-size:64px;animation:float 3s ease-in-out infinite;margin-bottom:9px">' + icon + '</div>' +
+        '<div style="font-family:\'Fredoka One\',cursive;font-size:24px;margin-bottom:3px">' + msg + '</div>' +
+        '<div class="rscore">' + QS.score + '/' + QS.total + '</div>' +
+        '<div class="rxp">+' + xp + ' XP earned!</div>' +
+        '<div style="color:var(--sub);font-size:11px;margin-bottom:18px">☁️ Progress saved to cloud</div>' +
+        '<button class="btnpri" style="max-width:180px;margin:0 auto" onclick="startQ()">Try Again 🔄</button>' +
+      '</div>';
+    QS = null;
+  }, 950);
+}
+
+// ── Profile ───────────────────────────────────────────────
+async function renderProf() {
+  if (!PR) return;
+  var lang = null;
+  for (var i = 0; i < LANGS.length; i++) {
+    if (LANGS[i].code === PR.selected_language) { lang = LANGS[i]; break; }
+  }
+  document.getElementById('pun').textContent   = PR.username;
+  document.getElementById('psub2').textContent = 'Level ' + (PR.level || 1) + ' · ' + (lang ? lang.flag + ' ' + lang.en : '');
+  document.getElementById('pstr').textContent  = PR.streak        || 1;
+  document.getElementById('pxp').textContent   = PR.xp            || 0;
+  document.getElementById('pwd').textContent   = PR.words_learned || 0;
+  document.getElementById('pqz').textContent   = PR.quizzes_done  || 0;
+  document.getElementById('plf').textContent   = lang ? lang.flag : '🌍';
+  document.getElementById('pln').textContent   = lang ? lang.name : '—';
+  document.getElementById('ple').textContent   = lang ? lang.en   : '—';
+
+  try {
+    var res = await SB.from('quiz_scores').select('*').eq('user_id', CU.id).order('played_at', { ascending: false }).limit(6);
+    var hl = document.getElementById('qhlist');
+    if (res.data && res.data.length > 0) {
+      hl.innerHTML = res.data.map(function(s) {
+        var ll = null;
+        for (var i = 0; i < LANGS.length; i++) { if (LANGS[i].code === s.language) { ll = LANGS[i]; break; } }
+        var flagEn = ll ? ll.flag + ' ' + ll.en : s.language;
+        var scoreColor = s.score === s.total ? 'var(--grn)' : 'var(--ac)';
+        return '<div class="scrow">' +
+          '<span>' + flagEn + '</span>' +
+          '<span style="font-weight:900;color:' + scoreColor + '">' + s.score + '/' + s.total + '</span>' +
+          '<span style="color:var(--gld);font-weight:700">+' + s.xp_earned + ' XP</span>' +
+          '</div>';
+      }).join('');
+    } else {
+      hl.innerHTML = '<div style="color:var(--sub);font-size:12px">No quizzes yet!</div>';
+    }
+  } catch(e) {}
+}
+
+// ── Theme ─────────────────────────────────────────────────
+function setTh(t, btn) {
+  CTH = t;
+  document.documentElement.setAttribute('data-t', t === 'default' ? '' : t);
+  document.querySelectorAll('.thsw').forEach(function(b) { b.classList.remove('on'); b.style.borderColor = ''; b.style.color = ''; });
+  if (btn) { btn.classList.add('on'); btn.style.borderColor = 'var(--ac)'; btn.style.color = 'var(--ac)'; }
+}
+
+function cycleTheme() {
+  var idx = TLIST.indexOf(CTH);
+  var next = TLIST[(idx + 1) % TLIST.length];
+  var btn = document.querySelector('[data-t="' + next + '"]');
+  setTh(next, btn);
+  playFX('click');
+}
+
+// ── Lang Modal ────────────────────────────────────────────
+function openLM() {
+  document.getElementById('lmod').classList.add('on');
+  if (PR && PR.selected_language) {
+    document.querySelectorAll('.mlc').forEach(function(c) { c.classList.remove('sel'); });
+    var sel = document.getElementById('mlc-' + PR.selected_language);
+    if (sel) sel.classList.add('sel');
+  }
+}
+function closeLM() { document.getElementById('lmod').classList.remove('on'); }
+function closeLMOut(e) { if (e.target === document.getElementById('lmod')) closeLM(); }
+
+// ── Sound FX ─────────────────────────────────────────────
+function playFX(t) {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    var n = ctx.currentTime;
+    if (t === 'correct') {
+      o.frequency.setValueAtTime(523, n); o.frequency.setValueAtTime(659, n+.1); o.frequency.setValueAtTime(784, n+.2);
+      g.gain.setValueAtTime(.2, n); g.gain.exponentialRampToValueAtTime(.001, n+.5);
+      o.start(); o.stop(n+.5);
+    } else if (t === 'wrong') {
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(200, n); o.frequency.setValueAtTime(140, n+.2);
+      g.gain.setValueAtTime(.15, n); g.gain.exponentialRampToValueAtTime(.001, n+.4);
+      o.start(); o.stop(n+.4);
+    } else if (t === 'click') {
+      o.frequency.value = 900;
+      g.gain.setValueAtTime(.06, n); g.gain.exponentialRampToValueAtTime(.001, n+.07);
+      o.start(); o.stop(n+.07);
+    } else if (t === 'level') {
+      var freqs = [523, 659, 784, 1047, 1318];
+      for (var i = 0; i < freqs.length; i++) {
+        (function(f, delay) {
+          var o2 = ctx.createOscillator(), g2 = ctx.createGain();
+          o2.connect(g2); g2.connect(ctx.destination);
+          o2.frequency.value = f;
+          g2.gain.setValueAtTime(.14, n+delay); g2.gain.exponentialRampToValueAtTime(.001, n+delay+.22);
+          o2.start(n+delay); o2.stop(n+delay+.22);
+        })(freqs[i], i * 0.1);
+      }
+    }
+  } catch(e) {}
+}
+
+// ── Particles ─────────────────────────────────────────────
+function celebrate() {
+  var C = document.getElementById('ptcl');
+  var cols = ['#FFD700','#FF6B6B','#A29BFE','#55EFC4','#FD79A8','#00F5FF','#FBBF24'];
+  for (var i = 0; i < 20; i++) {
+    var p = document.createElement('div');
+    p.className = 'pt';
+    p.style.cssText = 'left:' + (Math.random()*100) + '%;top:' + (Math.random()*100) + '%;' +
+      'width:' + (Math.random()*10+5) + 'px;height:' + (Math.random()*10+5) + 'px;' +
+      'background:' + cols[i % cols.length] + ';' +
+      'animation-duration:' + (Math.random()*1.1+0.5) + 's;' +
+      'animation-delay:' + (Math.random()*0.3) + 's;' +
+      'box-shadow:0 0 6px currentColor';
+    C.appendChild(p);
+    setTimeout(function() { if (p.parentNode) p.parentNode.removeChild(p); }, 1800);
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────
+var TT;
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type ? ('show ' + type) : 'show';
+  clearTimeout(TT);
+  TT = setTimeout(function() { t.className = ''; }, 3200);
+}
+
+// ── Keyboard ─────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('asc').classList.contains('on')) doAuth();
+});
+
+// ── Double tap zoom prevention ────────────────────────────
+var lastT = 0;
+document.addEventListener('touchend', function(e) {
+  var now = Date.now();
+  if (now - lastT < 280 && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+  }
+  lastT = now;
+}, { passive: false });
+
+// Allow scroll in these containers
+['tcont','mbox','lsc','asc'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('touchend', function(e) { e.stopPropagation(); }, { passive: true });
+});
+</script>
+</body>
+</html>
